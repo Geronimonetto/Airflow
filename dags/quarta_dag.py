@@ -10,5 +10,5 @@ with DAG('quarta_dag', description='Quarta DAG',
     task2 = BashOperator(task_id='task_extract2', bash_command='sleep 5')
     task3 = BashOperator(task_id='task_extract3', bash_command='sleep 5')
 
-    task1.set_upstream(task2)  # Proxima task a ser executada
-    task2.set_upstream(task3)  # Proxima task a ser executada
+    task1.set_upstream(task2)  # A task1 será executada após a task2
+    task2.set_upstream(task3)  # A task será executada após a task3
