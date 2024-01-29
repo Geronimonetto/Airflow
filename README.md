@@ -35,13 +35,7 @@ Organize this text to make it visually appealing in the GitHub README.
 
 
 
-# Grupo de Tarefas (Task Group)
-BR
-
-*As tasks podem também serem executadas em grupos, para que precisemos de uma economia de tempo um pouco maior e não seja necessário executá-las separadamente. 
-Para isso, devemos usar o tsk_group na parte de precedência.*
-
-US
+# Task Group
 
 *Tasks can also be executed in groups, allowing for a slightly greater time efficiency, and they do not need to be executed separately. 
 To achieve this, we should use tsk_group in the dependency section.*
