@@ -83,6 +83,41 @@ task3 >> task4
 task6 >> tsk_group  # task6 is set to run before the TaskGroup
 
 # The DAG is now ready to be executed based on the defined dependencies and schedule.
+```
 
+# Send Email with Airflow 
+
+If an error occurs in the DAG, Airflow automatically sends email notifications.
+
+Another way is to create a task so that at the end of the pipeline, the task sends the email.
+
+Automatic, definition in the DAG:
+
+```python
+email_on_failure = True  # (Sends email if a failure occurs)
+email_on_retry = False  # (Sends email if the task is retried automatically)
+retries = 1  # Defines the number of times a task will be retried before failing permanently
+retry_delay = timedelta(minutes=5)  # Defines the time interval between retries
+```
+
+EmailOperator:
+
+Sends an email within the Airflow workflow. What is needed for EmailOperator to work?
+
+SMTP Server - Email service
+Configure Airflow
+Configuring G-MAIL:
+
+Settings
+Set a password for Airflow
+Add the following lines to your docker-compose.yaml:
+
+```yaml
+AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
+AIRFLOW__SMTP__SMTP_USER: your email
+AIRFLOW__SMTP__SMTP_PASSWORD: generated password
+AIRFLOW__SMTP__SMTP_PORT: 587
+AIRFLOW__SMTP__MAIL_FROM: Airflow
+```
 
 
