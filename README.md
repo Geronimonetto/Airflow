@@ -35,7 +35,7 @@ Organize this text to make it visually appealing in the GitHub README.
 
 
 
-# Task Group
+## Task Group
 
 *Tasks can also be executed in groups, allowing for a slightly greater time efficiency, and they do not need to be executed separately. 
 To achieve this, we should use tsk_group in the dependency section.*
@@ -79,7 +79,7 @@ task6 >> tsk_group  # task6 is set to run before the TaskGroup
 # The DAG is now ready to be executed based on the defined dependencies and schedule.
 ```
 
-# Send Email with Airflow 
+## Send Email with Airflow 
 
 If an error occurs in the DAG, Airflow automatically sends email notifications.
 
@@ -114,69 +114,58 @@ AIRFLOW__SMTP__SMTP_PORT: 587
 AIRFLOW__SMTP__MAIL_FROM: Airflow
 ```
 
-## Variáveis do Airflow
+## Airflow Variables
 
-Funcionam para o compartilhamento de informações entre as DAGS
-	- Credenciais de API
-	- URLs
-	- Chaves de autenticação
-	- Endereços de arquivos
-As variáveis podem ser criadas através de Interface gráfica/ CLI / Python
+Functionality for Sharing Information Between DAGs:
 
-Diferença entre variáveis e XCom
+- API Credentials
+- URLs
+- Authentication Keys
+- File Paths
 
-Variáveis:
-- São informações estáticas e globais
-- Usadas em todo o pipeline
-XCom
-- Informações dinâmicas
-- Entre as tarefas - Informações trocadas na mesma DAG
+Variables Creation Methods:
+Variables can be created through the graphical interface, CLI, or Python script.
 
-Variáveis por interface - **Passo1** - Admin >> **Passo 2** - Variables
-Escopo de variáveis
+Difference between Variables and XCom:
 
-Key: nome_variavel
-Val: informação_aleatoria (exemplo)
-Description: -
+Variables:
 
-Essa variável a partir da criação no Airflow será global podendo ser chamada no python, criamos uma variável chamada minha_var com o valor - ollá
+- Static and global information
+- Used across the entire pipeline
+XCom:
 
-Exemplo:
+- Dynamic information
+- Exchanged between tasks within the same DAG
 
-```
+*Creating Variables via Interface - Step 1: Admin >> Step 2: Variables*
+
+Scope of Variables:
+
+- Key: variable_name
+- Value: random_information (example)
+- Description: -
+
+Once created in Airflow, this variable becomes global and can be called in Python. For instance, we create a variable named 'my_var' with the value 'hello'.
+
+Example:
+
+```python
 from airflow import DAG
-
 from airflow.operators.python_operator import PythonOperator
-
 from airflow.models import Variable
-
 from datetime import datetime
 
-  
-
-dag = DAG('variaveis', description='Variaveis globais',
-
-          schedule_interval=None, start_date=datetime(2024, 2, 1), catchup=False)
-
-  
-  
+dag = DAG('variables', description='Global Variables',
+          schedule_interval=None, start_date=datetime(2024, 2, 1), catchup=False)
 
 def print_variable(**context):
-
-    minha_var = Variable.get('minha_var')
-
-    print(f'O Valor da variável é {minha_var}')
-
-  
-  
+    my_var = Variable.get('my_var')
+    print(f'The value of the variable is {my_var}')
 
 task1 = PythonOperator(task_id='tsk1', python_callable=print_variable, dag=dag)
 
-  
-
 task1
-
-#Result: O Valor da variável é ollá (Vemos isso no log da DAG)
+#Result: The value of the variable is hello (Displayed in the DAG log)
 ```
 
 
