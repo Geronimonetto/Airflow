@@ -114,4 +114,70 @@ AIRFLOW__SMTP__SMTP_PORT: 587
 AIRFLOW__SMTP__MAIL_FROM: Airflow
 ```
 
+## Variáveis do Airflow
+
+Funcionam para o compartilhamento de informações entre as DAGS
+	- Credenciais de API
+	- URLs
+	- Chaves de autenticação
+	- Endereços de arquivos
+As variáveis podem ser criadas através de Interface gráfica/ CLI / Python
+
+Diferença entre variáveis e XCom
+
+Variáveis:
+- São informações estáticas e globais
+- Usadas em todo o pipeline
+XCom
+- Informações dinâmicas
+- Entre as tarefas - Informações trocadas na mesma DAG
+
+Variáveis por interface - **Passo1** - Admin >> **Passo 2** - Variables
+Escopo de variáveis
+
+Key: nome_variavel
+Val: informação_aleatoria (exemplo)
+Description: -
+
+Essa variável a partir da criação no Airflow será global podendo ser chamada no python, criamos uma variável chamada minha_var com o valor - ollá
+
+Exemplo:
+
+```
+from airflow import DAG
+
+from airflow.operators.python_operator import PythonOperator
+
+from airflow.models import Variable
+
+from datetime import datetime
+
+  
+
+dag = DAG('variaveis', description='Variaveis globais',
+
+          schedule_interval=None, start_date=datetime(2024, 2, 1), catchup=False)
+
+  
+  
+
+def print_variable(**context):
+
+    minha_var = Variable.get('minha_var')
+
+    print(f'O Valor da variável é {minha_var}')
+
+  
+  
+
+task1 = PythonOperator(task_id='tsk1', python_callable=print_variable, dag=dag)
+
+  
+
+task1
+
+#Result: O Valor da variável é ollá (Vemos isso no log da DAG)
+```
+
+
 
