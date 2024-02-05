@@ -22,5 +22,5 @@ task6 = BashOperator(task_id='dummy_task_six',
 task7 = BashOperator(task_id='dummy_task_seven',
                      bash_command='sleep 2', dag=dag)
 
-[task1, task2] >> task_connection >> [task3, task4] >> task_connection2
+[task1, task2]  >> task_connection >> [task3, task4] >> task_connection2
 task_connection2 >> [task5, task6, task7]
