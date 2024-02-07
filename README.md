@@ -92,6 +92,42 @@ AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
 AIRFLOW_API_AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api
 _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
 ```
+Adicione a linha abaixo para ver as configurações do Airflow (inteface)
+```yaml
+AIRFLOW__CORE__FERNET_KEY: ''
+AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+AIRFLOW_API_AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api
+_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
+AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+```
+Adicione a linha abaixo - Para que o tempo de processamento de uma Dag após ser adicionada na pasta de Dags - O padrão do Airflow é 30.
+
+```yaml
+_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
+AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 5
+```
+Adicione a linha abaixo - Por padrão o Airflow só busca uma nova Dag a cada 5 minutos (300 seg), logo alterando esse 
+código o tempo de busca por novas Dags é de 20 segundos.
+
+```yaml
+_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
+AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 5
+AIRFLOW__CHEDULER__DAG_DIR_LIST_INTERVAL: 20
+```
+Após fazer essas modificações no docker-compose.yaml devemos parar o docker-compose
+```bash
+docker-compose down
+```
+e rodar novamente para atualizar
+```bash
+docker-compose up -d
+```
 
 ## Task Group
 
