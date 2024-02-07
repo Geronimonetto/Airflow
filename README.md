@@ -27,6 +27,7 @@ bcdedit /set HypervisorLaunchType auto
 
 2. **Salve os seguintes arquivos na pasta**
 	- **docker-compose.yaml** (crie um arquivo no vscode com esse nome)
+ 	- copie tudo deste link para o arquivo docker-compose.yaml e salve dentro da pasta Airflow	
 		- https://airflow.apache.org/docs/apache-airflow/2.5.1/docker-compose.yaml
 	- **.env** (com as seguintes linhas escritas)
 		- AIRFLOW_IMAGE_NAME=apache/airflow:2.5.1
