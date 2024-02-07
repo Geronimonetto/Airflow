@@ -1,39 +1,97 @@
+# Airflow
+## Error docker desktop - unexpected wsl error
+Vale lembrar que o erro que aconteceu no meu Docker pode ser diferente do que você encontre no seu computador.
 
-# **Prerequisites for Airflow Usage:**
+- Abra o Powershell em modo administrador
+- Escreva o seguinte comando
+```
+bcdedit /set HypervisorLaunchType auto
+```
+- Reinicie o computador
+- Entre na BIOS do seu computador
+- Verifique a opção Virtualization Technology está ativada
+	- Desative e ative novamente
+	- F10 para salvar
+- Rode o Docker Desktop e veja se o problema persiste
 
-- Docker Installation
-- Installation of an IDE (Anaconda/VSCode)
-- Airflow Installation with Docker
+## Instalação Airflow
+**Para o uso do Airflow é necessário alguns pré-requisitos:**
 
-### Installing Airflow in the Environment:
-1.	**Create a folder of your preference with the name "airflow"**
+- Instalação do Docker
+- Instalação de alguma IDE (Anaconda/VSCode)
+- Instalação do Airflow com Docker
 
-2.	**Save the following files in the folder:**
+### **Instalação do Airflow no ambiente:**
 
-	- docker-compose.yaml (create a file in VSCode with this name)
-		-	[docker-compose.yaml](https://airflow.apache.org/docs/apache-airflow/2.5.1/docker-compose.yaml)
-	- **.env** (with the following lines written):
+1. **Crie uma pasta de preferência com nome "airflow"**
+
+2. **Salve os seguintes arquivos na pasta**
+	- **docker-compose.yaml** (crie um arquivo no vscode com esse nome)
+		- https://airflow.apache.org/docs/apache-airflow/2.5.1/docker-compose.yaml
+	- **.env** (com as seguintes linhas escritas)
 		- AIRFLOW_IMAGE_NAME=apache/airflow:2.5.1
 		- AIRFLOW_UID=50000
-
-3.	**Follow the steps below:**
-
-	- In the terminal, use the cd command to navigate to the path of the "airflow" folder where the above files are located, and execute the following commands:
+	
+3. **Siga os procedimentos abaixo**
+	- Com o terminal usando o comando cd, encontre o caminho da pasta airflow onde estão os arquivos acima e use os comandos abaixo:
 		- `docker-compose up -d`
-		- `docker-compose ps`  (checking the health of Docker)
+		- `docker-compose ps` (verificando a saúde do docker)
 
-4.	**Open your browser and go to localhost:8080**
+4. **Digite no seu navegador localhost:8080**
+	- Aparecerá o o gerenciador do airflow:
+		- Usuário: airflow
+		- Senha: airflow
 
-	- The Airflow manager will be displayed:
-		-	Username: airflow
-		-	Password: airflow
+## **DAG's** 
 
-Organize this text to make it visually appealing in the GitHub README.
+- Contém nomes únicos 
+- Podem ser separadas por classificação e departamento
+- As DAGS devem ser agendadas
+- Uma DAG é composta por uma ou mais Tasks
 
+Sinônimo de DAG - Workflow ou Pipeline de orquestração de processamento de dados
+- DAG é feita em Python (Arquivo python)
+- .py - Extensão das Dags
+- Por quesito de organização é padrão ter 1 Dag em cada arquivo .py (mas é possível colocar mais de 1 dag)
 
+```python
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import date, datetime
 
+dag= DAG('dag_example', description='dag teste para execução', schedule_interval = None,
+	start_date= datetime(date.today().year, date.today().month, date.today().day, catchup = False)
 
+task_test1 = BashOperator(task_id='task1', bash_command='sleep 1', dag=dag)
+task_test2 = BashOperator(task_id='task2', bash_command='sleep 1', dag=dag)
 
+task1 >> task2
+
+```
+No exemplo acima podemos ver 2 tasks executando comando de bash(terminal) para esperar 1 segundo.
+
+- Dag deve possuir o identificador único, no exemplo acima é o "exemplo_dag"
+- Existem diversos tipos de operator - No exemplo acima é o BashOperator (Executam comando no shell do SO (sistema operacional))
+- O identificador das tasks dentro da Dag devem ser únicos, bash_command - comando a ser executado (Sleep 5 (esperar 5 segundos)), dag - é um parâmetro obrigatório.
+- Executando as tasks na ordem abaixo - task1 >> task2 >> task3
+
+## Alterando configurações do Airflow
+```yaml
+AIRFLOW__CORE__FERNET_KEY: ''
+AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+AIRFLOW_API_AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api
+_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+```
+O Código acima está modificando a variável de ambiente para que os exemplos de Dags no Airflow não apareçam para não misturar com as Dags criadas pelo desenvolvedor, 
+troque o 'true' de AIRFLOW__CORE__LOAD_EXAMPLES por 'false'
+```yaml
+AIRFLOW__CORE__FERNET_KEY: ''
+AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+AIRFLOW_API_AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api
+_PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+```
 
 ## Task Group
 
