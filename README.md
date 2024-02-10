@@ -211,7 +211,7 @@ As tasks podem também serem executadas em grupos, para que precisemos uma econo
 
 Para isso devemos usar o tskgroup na parte de precedência
 
-```
+```python
 from airflow import DAG
 
 from airflow.operators.bash_operator import BashOperator
