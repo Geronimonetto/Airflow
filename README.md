@@ -129,49 +129,139 @@ e rodar novamente para atualizar
 ```bash
 docker-compose up -d
 ```
+## Execução em paralelo das tasks
+
+
+Para que as tasks sejam executadas em paralelo devemos colocar as tasks em uma lista.
+
+Exemplo: 
+
+```python
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime, date
+
+
+dag = DAG('example_dag', description='Descrição da dag', schedule_interval=None,
+		 start_date=datetime(2024,10,2), catchup=False)
+
+
+task_one = BashOperator(task_id='bash_task', bash_command='sleep 5', dag=dag)
+task_two = BashOperator(task_id='bash_task2', bash_command='sleep 5', dag=dag)
+task_three = BashOperator(task_id='bash_task3', bash_command='sleep 5', dag=dag)
+
+
+task_one >> [task_two, task_three]
+
+```
+
+
+ao final do código podemos ver que a task1 será executada e após a finalização as tasks 2 e 3 serão executadas em paralelo.
+Assim como para inverter a ordem de precedência basta modificar a lista para o início e a task a ser executada logo após.
+
+Exemplo:
+
+```python
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime, date
+
+
+dag = DAG('example_dag', description='Descrição da dag', schedule_interval=None,
+		 start_date=datetime(2024,10,2), catchup=False)
+
+
+task_one = BashOperator(task_id='bash_task', bash_command='sleep 5', dag=dag)
+task_two = BashOperator(task_id='bash_task2', bash_command='sleep 5', dag=dag)
+task_three = BashOperator(task_id='bash_task3', bash_command='sleep 5', dag=dag)
+
+
+[task_one,task_two] >> task_three
+
+```
+
+Usando funções no Python para execução de tasks
+set_upstream - Seleciona qual task será executada depois da selecionada.
+
+Exemplo:
+
+```python
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime, date
+
+
+dag = DAG('example_dag', description='Descrição da dag', schedule_interval=None,
+		 start_date=datetime(2024,10,2), catchup=False)
+
+
+task_one = BashOperator(task_id='bash_task', bash_command='sleep 5', dag=dag)
+task_two = BashOperator(task_id='bash_task2', bash_command='sleep 5', dag=dag)
+task_three = BashOperator(task_id='bash_task3', bash_command='sleep 5', dag=dag)
+
+
+task_one.set_upstream(task_two)  # A task_one será executada após a task_two
+
+```
+
 
 ## Task Group
 
-*Tasks can also be executed in groups, allowing for a slightly greater time efficiency, and they do not need to be executed separately. 
-To achieve this, we should use tsk_group in the dependency section.*
+As tasks podem também serem executadas em grupos, para que precisemos uma economia de tempo um pouco maior e não serão precisas executa-lás separadamente.
 
+Para isso devemos usar o tskgroup na parte de precedência
 
-
-```python
-
-
+```
 from airflow import DAG
+
 from airflow.operators.bash_operator import BashOperator
+
 from datetime import datetime
+
 from airflow.utils.task_group import TaskGroup
 
-# Define the DAG
-dag = DAG('dag_group', description='Esta task executa mais tasks', schedule_interval=None,
-          start_date=datetime(2024, 1, 23), catchup=False)
+  
 
-# Define individual tasks
+dag = DAG('dag_group', description='Esta task executa mais tasks', schedule_interval = None,
+
+          start_date = datetime(2024,1,23), catchup=False)
+
+  
+
 task1 = BashOperator(task_id='task1_exec', bash_command='sleep 2', dag=dag)
+
 task2 = BashOperator(task_id='task2_exec', bash_command='sleep 3', dag=dag)
+
 task3 = BashOperator(task_id='task3_exec', bash_command='sleep 3', dag=dag)
+
 task4 = BashOperator(task_id='task4_exec', bash_command='sleep 3', dag=dag)
+
 task5 = BashOperator(task_id='task5_exec', bash_command='sleep 3', dag=dag)
+
 task6 = BashOperator(task_id='task6_exec', bash_command='sleep 3', dag=dag)
 
-# Create a TaskGroup named 'Tks_group'
-tsk_group = TaskGroup('Tks_group', dag=dag)
+  
 
-# Assign tasks to the TaskGroup
-task7 = BashOperator(task_id='task7_exec', bash_command='sleep 3', dag=dag, task_group=tsk_group)
-task8 = BashOperator(task_id='task8_exec', bash_command='sleep 3', dag=dag, task_group=tsk_group)
-task9 = BashOperator(task_id='task9_exec', bash_command='sleep 3', dag=dag, task_group=tsk_group)
+tsk_group = TaskGroup('Tks_group', dag=dag)  #Criando um grupo de tasks
 
-# Set up task dependencies
+  
+#Informando que as tasks pertecem ao grupo
+
+task7 = BashOperator(task_id='task7_exec', bash_command='sleep 3', dag=dag, task_group = tsk_group)  
+
+task8 = BashOperator(task_id='task8_exec', bash_command='sleep 3', dag=dag, task_group = tsk_group)
+
+task9 = BashOperator(task_id='task9_exec', bash_command='sleep 3', dag=dag, task_group = tsk_group)
+
+  
+
 task1 >> task2
-task3 >> task4
-[task2, task4] >> task5 >> task6
-task6 >> tsk_group  # task6 is set to run before the TaskGroup
 
-# The DAG is now ready to be executed based on the defined dependencies and schedule.
+task3 >> task4
+
+[task2, task4] >> task5 >> task6
+
+task6 >> tsk_group
 ```
 
 ## Send Email with Airflow 
