@@ -445,6 +445,94 @@ branch_task >> par_task
 
 branch_task >> impar_task
 ```
+## Sensors
+
+Os sensores aguardam um evento ou disponibilidade de um serviço, não executa nenhuma ação adicional.
+Os sensores não fazem nada, quando o serviço estiver disponível ele chama a próxima task
+Por exemplo: 
+- Verifica arquivo e outra task importa 
+
+Principais sensores: 
+
+1.  **FileSensor**: Aguarda a existência ou a ausência de um arquivo em um caminho específico.
+2.  **HttpSensor**: Aguarda a disponibilidade de uma URL
+3. **S3KeySensor**: Aguarda a existência ou a ausência de uma chave em um bucket S3
+4. **SqlSensor**: Aguarda a execução de uma consulta SQL em um banco de dados
+
+Parâmetros:
+
+1. **poke_interval:** Define o interval de tempo entre as verificações do sensor
+2. timeout: Define o tempo máximo que o sensor pode esperar antes de atingir o tempo limite
+3. **soft_fail:** Especifica se o sensor deve falhar silenciosamente (retornando "False") ou gerar uma exceção quando atinge o tempo limite.
+4. **mode:** Especifica o modo de operação do sensor ("reschedule" para agendar novamente a tarefa ou "poke" para continuar verificando até que a condição seja atendida)
+5. **poke_on_failure:** Especifica se o sensor deve continuar verificando quando ocorre uma falha na verificação anterior.
+
+### Exemplo com HttpSensor 
+
+1. Verificar a disponibilidade da API
+	- https://api.publicapis.org/entries
+	- Esta API é uma lista de APIs publicas
+2. Um PythonOperator vai consultar a API caso disponível
+3. Precisamos cadastrar a API como uma conexão.
+
+#### Passo a Passo
+
+- Crie uma conexão no airflow
+- connection id: Nome da variavel a ser usada no Python
+- connection Type: Http
+- Host: API ( https://api.publicapis.org/) - *A ultima barra deve ser mantida para funcionar o endpoint*
+- Concluido
+
+```python
+from airflow import DAG
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import datetime, date
+
+from airflow.providers.http.sensors.http import HttpSensor
+
+import requests
+
+  
+  
+
+dag = DAG('sensors_api', description='Esta dag verifica a api', schedule_interval=None,
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Função que chama a API e seu resultado
+def query_api():
+
+    response = requests.get("https://api.publicapis.org/entries")
+
+    print(response.text)
+
+  
+  
+# Task para verificar se a API está disponível
+verify_api = HttpSensor(task_id='verify_api',
+
+                        http_conn_id='conexao_api', endpoint='entries',
+
+                        poke_interval=5,
+
+                        timeout=20,
+
+                        dag=dag)
+                       
+# Task para chamar a função que chama a API
+call_api = PythonOperator(
+
+    task_id='call_api', python_callable=query_api, dag=dag)
+
+  
+  
+
+verify_api >> call_api
+```
 
 
 
