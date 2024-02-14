@@ -534,5 +534,125 @@ call_api = PythonOperator(
 verify_api >> call_api
 ```
 
+## Providers
+
+São módulos Python que estendem a funcionalidade do airflow
+
+Existem vários tipos: operators, sensors, hooks e outros.
+
+Muitos já fazem parte do Airflow
+
+Podem ser instalados usando PIP
+
+Exemplos:
+	- apache-airflow-providers-postgres
+	- apache-airflow-providers-amazon
+	- apache-airflow-providers-google
+
+Utilizaremos o apache-airflow-providers-postgres para interação com o banco de dados
+
+Exercício:
+
+
+$$
+Criar uma tabela ==> Inserir um dados ==> Consultar a tabela ==> Imprimir o resultado
+$$
+
+
+### Passo a Passo
+
+Verifique a lista de providers em admin > providers para saber se o provider que você quer utilizar ja vem pré-instalado 
+
+alguns exemplos:
+	- apache-airflow-providers-amazon --> Amazon Integration
+	- apache-airflow-providers-elasticsearch --> Elasticsearch
+
+#### Criando a conexão
+**conecct_id** - indique o nome (postgres_connect - nosso exemplo)
+**host** - postgres
+**connection_type** - postgres
+
+
+Acompanhe o código para criação - inserção e consulta no banco de dados
+
+```python
+from airflow import DAG
+
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import datetime, date
+
+  
+  
+# Criando DAG
+dag = DAG('postgre_dag', description='A Dag executa comandos SQL no banco de dados postgres', schedule_interval=None,
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Função para imprimir dados contidos na tabela
+def print_result_db(ti):
+
+    task_instance = ti.xcom_pull(task_ids='query_data')
+
+    print("Resultado da consulta: ")
+
+    for row in task_instance:
+
+        print(row)
+
+  
+  
+# Task para criar uma tabela
+create_table = PostgresOperator(task_id='create_table',
+
+                                postgres_conn_id='postgres_connect',
+
+                                sql='create table if not exists teste(id int);',
+
+                                dag=dag)
+
+  
+# Task para inserir dados na tabela
+insert_data = PostgresOperator(task_id='insert_data',
+
+                               postgres_conn_id='postgres_connect',
+
+                               sql='insert into teste values(1);',
+
+                               dag=dag)
+
+  
+# Task para consultar dados da tabela
+query_data = PostgresOperator(task_id='query_data',
+
+                              postgres_conn_id='postgres_connect',
+
+                              sql='select * from teste;',
+
+                              dag=dag,
+
+                              do_xcom_push=True)
+
+  
+# Task para imprimir valor da tabela no banco de dados
+print_result = PythonOperator(task_id='print_result',
+
+                              python_callable=print_result_db,
+
+                              provide_context=True,
+
+                              dag=dag)
+
+  
+  
+
+create_table >> insert_data >> query_data >> print_result
+```
+
+
 
 
