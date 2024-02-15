@@ -1044,3 +1044,121 @@ Exemplo:
 	
 	AIRFLOW__SMTP__SMTP_HOST: 
 
+#### Core
+
+**dags_folder** = /path/to/your/dags/folder
+	- *caminho das suas dags*
+**base_log_folder** = /path/to/your/log/folder 
+	- *caminho dos arquivos de log*
+**executor** = SequentialExecutor
+	- *Executer que está sendo usado*
+**sql_alchemy_conn** = postgresql+psycopg2://user:password@localhost/db_name
+	-  Onde estão os metadados
+**parallelism** =32 - 
+	- máximo de tasks que podem rodar em paralelo em todo o ambiente
+**dag_concurrency** = 16
+	-  número máximo de tarefas que podem ser executadas por dag
+
+#### Webserver
+
+- **web_server_host** = 0.0.0.0 - Endereço padrão
+- **web_server_port** = 8080 - porta padrão
+- **authenticate** = False - Se utiliza autenticação ou não
+
+#### scheduler
+
+- **scheduler_heartbeat_sec** = 5 
+	- verifica se há alguma tarefa para ser executada
+- **job_heartbeat_sec **= 5
+	- frequência em segundos que verifica se o trabalho estã sendo executado corretamente
+- **num_runs** = -1 
+	- número de vezes que o scheduler executa antes de sair
+
+#### Executers
+
+	Alocação de recursos - como e onde executar tarefas
+	Gerencia Paralelismo
+	Gerencia Dependências
+	Tratamento de falhas
+	Monitora - as execuções
+	Loga - registrar as execuções
+
+##### Tipos de Executers
+
+- **CeleryExecutor**==> Execução distribuída em cluster
+- **SequentialExecutor** ==> Permite apenas execução sequencial
+- **LocalExecuter** ==> Permite execução em paralelo, mas somente local
+- **KubernetesExecutor** ==> Executa em ambientes Kubernetes
+
+## Plugins
+
+- Estende a funcionalidade do Airflow
+- Pode encapsular código para reutilização
+- Classe Python
+
+Por padrão ja existe uma pasta para plugins
+
+- Construtor que herda BaseOperator
+- Precisa ter o método Execute 
+
+##### Criando Plugins
+
+O Plugin será para transformar arquivos csv em parquet ou JSON
+
+#### Passo a Passo
+
+Para a criação de um plugin devemos criar um arquivo python dentro da pasta plugins do airflow
+e usar como base a classe BaseOperator do models
+
+
+```python
+from airflow.models import BaseOperator
+
+from airflow.utils.decorators import apply_defaults
+
+import pandas as pd
+
+  
+  
+# Criando classe herdando do BaseOperator
+class BigDataOperator(BaseOperator):
+
+  
+
+    @apply_defaults  # Utilizando o decorator
+    def __init__(self, path_to_csv_file: str, path_to_save_file: str,
+
+                 separator: str = ';', file_type: str = 'parquet', *args,
+
+                 **kwargs) -> None:
+
+        super().__init__(*args, **kwargs)
+
+        self.path_to_csv_file: str = path_to_csv_file  # Caminho do arquivo
+
+        self.path_to_save_file: str = path_to_save_file  # Caminho onde salva o arquivo
+
+        self.separator: str = separator  # Separador do csv
+
+        self.file_type: str = file_type  # Tipo do arquivo ex: csv, json
+
+  
+	# Criando função para executar a conversão do csv
+    def execute(self, context: str) -> None:
+		# lendo o arquivo csv
+        df = pd.read_csv(self.path_to_csv_file, sep=self.separator)
+		# Verificando o tipo do arquivo
+        if self.file_type == 'parquet':
+
+            df.to_parquet(self.path_to_save_file)
+		
+        elif self.file_type == 'json':
+
+            df.to_json(self.path_to_save_file)
+ 
+		# Tratamento de erro
+        else:
+
+            raise ValueError("O Tipo é Inválido!!")
+
+```
