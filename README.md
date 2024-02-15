@@ -1162,3 +1162,37 @@ class BigDataOperator(BaseOperator):
             raise ValueError("O Tipo é Inválido!!")
 
 ```
+Após a criação do plugin devemos criar uma dag para utilizar o nosso plugin.
+
+```python
+from airflow import DAG
+
+from airflow import Dataset
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import date, datetime
+
+from big_data_operator import BigDataOperator  # Importando o plugin criado
+
+import pandas as pd
+
+  
+
+dag = DAG('customer_csv', description='customer_csv', schedule=[meu_dataset],
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Criando uma task com o plugin criado e passando os parâmetros
+customer_task = BigDataOperator(task_id='customer_task', path_to_csv_file='/opt/airflow/data/Churn.csv',
+
+                                path_to_save_file='/opt/airflow/data/Churn.json', separator=';', file_type='json', dag=dag)
+
+  
+  
+
+customer_task
+
+```
