@@ -534,5 +534,665 @@ call_api = PythonOperator(
 verify_api >> call_api
 ```
 
+## Providers
+
+São módulos Python que estendem a funcionalidade do airflow
+
+Existem vários tipos: operators, sensors, hooks e outros.
+
+Muitos já fazem parte do Airflow
+
+Podem ser instalados usando PIP
+
+Exemplos:
+	- apache-airflow-providers-postgres
+	- apache-airflow-providers-amazon
+	- apache-airflow-providers-google
+
+Utilizaremos o apache-airflow-providers-postgres para interação com o banco de dados
+
+Exercício:
 
 
+$$
+Criar uma tabela ==> Inserir um dados ==> Consultar a tabela ==> Imprimir o resultado
+$$
+
+
+### Passo a Passo
+
+Verifique a lista de providers em admin > providers para saber se o provider que você quer utilizar ja vem pré-instalado 
+
+alguns exemplos:
+	- apache-airflow-providers-amazon --> Amazon Integration
+	- apache-airflow-providers-elasticsearch --> Elasticsearch
+
+#### Criando a conexão
+**conecct_id** - indique o nome (postgres_connect - nosso exemplo)
+**host** - postgres
+**connection_type** - postgres
+
+
+Acompanhe o código para criação - inserção e consulta no banco de dados
+
+```python
+from airflow import DAG
+
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import datetime, date
+
+  
+  
+# Criando DAG
+dag = DAG('postgre_dag', description='A Dag executa comandos SQL no banco de dados postgres', schedule_interval=None,
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Função para imprimir dados contidos na tabela
+def print_result_db(ti):
+
+    task_instance = ti.xcom_pull(task_ids='query_data')
+
+    print("Resultado da consulta: ")
+
+    for row in task_instance:
+
+        print(row)
+
+  
+  
+# Task para criar uma tabela
+create_table = PostgresOperator(task_id='create_table',
+
+                                postgres_conn_id='postgres_connect',
+
+                                sql='create table if not exists teste(id int);',
+
+                                dag=dag)
+
+  
+# Task para inserir dados na tabela
+insert_data = PostgresOperator(task_id='insert_data',
+
+                               postgres_conn_id='postgres_connect',
+
+                               sql='insert into teste values(1);',
+
+                               dag=dag)
+
+  
+# Task para consultar dados da tabela
+query_data = PostgresOperator(task_id='query_data',
+
+                              postgres_conn_id='postgres_connect',
+
+                              sql='select * from teste;',
+
+                              dag=dag,
+
+                              do_xcom_push=True)
+
+  
+# Task para imprimir valor da tabela no banco de dados
+print_result = PythonOperator(task_id='print_result',
+
+                              python_callable=print_result_db,
+
+                              provide_context=True,
+
+                              dag=dag)
+
+  
+  
+
+create_table >> insert_data >> query_data >> print_result
+```
+
+## Hooks
+
+São componentes para interagir com componentes do ambiente externo
+
+Por que usar os hooks ao invés dos providers?
+
+- São mais complexos porém são mais flexíveis
+
+São classes que podem ser instanciadas
+
+PostgresOperator - Encapsula o PostgresHook com pouquíssimo código
+
+
+Exercício:
+
+Mesmo exemplo acima porém utilizando de forma diferente com hooks.
+
+Diferentemente dos providers os hooks necessitam de funções ao invés de usar as tasks, por que diferente dos providers os hooks são usados em instâncias.
+
+Exemplo de código:
+
+```python
+from airflow import DAG
+
+from airflow.operators.python_operator import PythonOperator
+
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+
+from datetime import date, datetime
+
+  
+  
+
+dag = DAG('hooks_postgres', description='hooks para postgres', schedule_interval=None,
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Função para criar tabela, usando a classe PostgresHook
+def create_table():
+
+    postgres_hook = PostgresHook(postgres_conn_id='postgres_connect')
+
+    postgres_hook.run(
+
+        'create table if not exists tabela_teste(id int);', autocommit=True)
+
+  
+  
+# Função para inserir dados
+def insert_data():
+
+    postgres_hook = PostgresHook(postgres_conn_id='postgres_connect')
+
+    postgres_hook.run('insert into tabela_teste values(20);', autocommit=True)
+
+  
+  
+# Função para selecionar dados
+def select_data(**context):
+
+    postgres_hook = PostgresHook(postgres_conn_id='postgres_connect')
+
+    records = postgres_hook.get_records('select * from tabela_teste;')
+
+    context['ti'].xcom_push(key='query_data', value=records)
+
+  
+  
+# Função para imprimir dados
+def print_data(ti):
+
+    task_instance = ti.xcom_pull(
+
+        key='query_data', task_ids='select_table_task')
+
+    print('dados da tabela:')
+
+    for row in task_instance:
+
+        print(row)
+
+  
+  
+# Task para chamar a função create_data
+create_table_task = PythonOperator(
+
+    task_id='create_table_task', python_callable=create_table, dag=dag)
+
+# Task para chamar a função insert_data
+insert_table_task = PythonOperator(
+
+    task_id='insert_table_task', python_callable=insert_data, dag=dag)
+
+# Task para chamar a função select_data
+select_table_task = PythonOperator(
+
+    task_id='select_table_task', python_callable=select_data, provide_context=True, dag=dag)
+
+# Task para imprimir os dados da tabela chamando a função print data
+print_table_task = PythonOperator(
+
+    task_id='print_table_task', python_callable=print_data, provide_context=True, dag=dag)
+
+  
+  
+
+create_table_task >> insert_table_task >> select_table_task >> print_table_task
+```
+
+## CLI 
+
+Comando usados no CLI do airflow, para que isso venha a funcionar devemos usar os seguintes comandos:
+
+1. Verifique os containers do airflow - **docker ps**
+2. Copie o segundo container  e use o comando - **docker exec -it nome-do-container**
+
+*Podemos então verificar alguns comandos usados no airflow:*
+
+* **airflow dags list** - verifica as listas de dags
+* **airflow dags report** - mostra as 
+	* dags existentes (nomes de arquivos)
+	* duração 
+	* numero de dags
+	* numero de tasks
+	* nome das dags
+* **airflow dags list-jobs** 
+	* Mostra informações das dags detalhadas
+* **airflow dags next-execution nome-da-dag** 
+	* Mostra se existe um agendamento para a dag
+* **airflow dags list-runs -d nome-da-dag**
+	* mostra a ultima execução feita pela dag
+* **airflow dags pause nome-da-dag**
+	* pausando dag
+* **airflow dags unpause nome-da-dag 
+	* despausando dag
+* **airflow dags trigger nome-da-dag**
+	* rodando dag
+* **airflow tasks list nome-da-dag**
+	* verificando a lista de tasks da dag
+* **airflow tasks test nome-da-dag nome-da-task data-para-execução**
+	* testando task de dag
+* **airflow config list**
+	* listando configurações
+ * **airflow pools list**
+	 * Mostrando lista de pools
+* **airflow variables list**
+	* listando variáveis do airflow
+* **airflow cheat-sheet**
+	* mostrando todos os comandos do airflow
+
+***Miscellaneous commands***
+* **airflow cheat-sheet**                       
+	* Display cheat sheet
+* **airflow dag-processor**                     
+	* Start a standalone Dag Processor instance
+* **airflow info**                              
+	* Show information about current Airflow and environment
+* **airflow kerberos**                          
+	* Start a kerberos ticket renewer
+* **airflow plugins**                           
+	* Dump information about loaded plugins
+* **airflow rotate-fernet-key**                 
+	* Rotate encrypted connection credentials and variables
+* **airflow scheduler**                         
+	* Start a scheduler instance
+* **airflow standalone**                        
+	* Run an all-in-one copy of Airflow
+* **airflow sync-perm**                         
+	* Update permissions for existing roles and optionally DAGs
+* **airflow triggerer**                         
+	* Start a triggerer instance
+* **airflow version**                           
+	* Show the version
+* **airflow webserver**                         
+	* Start a Airflow webserver instance
+
+***Celery components***
+* **airflow celery flower**                     
+	* Start a Celery Flower
+* **airflow celery stop**                       
+	* Stop the Celery worker gracefully
+* **airflow celery worker**                     
+	* Start a Celery worker node
+
+***View configuration***
+* **airflow config get-value**                  
+	* Print the value of the configuration
+* **airflow config list**                       
+	* List options for the configuration
+
+***Manage connections***
+* **airflow connections add**                   
+	* Add a connection
+* **airflow connections delete**                
+	* Delete a connection
+* **airflow connections export**                
+	* Export all connections
+* **airflow connections get**                   
+	* Get a connection
+* **airflow connections import**                
+	* Import connections from a file
+* **airflow connections list**                  
+	* List connections
+
+***Manage DAGs***
+* **airflow dags backfill**                     
+	* Run subsections of a DAG for a specified date range
+* **airflow dags delete**                       
+	* Delete all DB records related to the specified DAG
+* **airflow dags list**                         
+	* List all the DAGs
+* **airflow dags list-import-errors**           
+	* List all the DAGs that have import errors
+* **airflow dags list-jobs**                    
+	* List the jobs
+* **airflow dags list-runs**                    
+	* List DAG runs given a DAG id
+* **airflow dags next-execution**               
+	* Get the next execution datetimes of a DAG
+* **airflow dags pause**                        
+	* Pause a DAG
+* **airflow dags report**                       
+	* Show DagBag loading report
+* **airflow dags reserialize**                  
+	* Reserialize all DAGs by parsing the DagBag files
+* **airflow dags show**                         
+	* Displays DAG's tasks with their dependencies
+* **airflow dags show-dependencies**            
+	* Displays DAGs with their dependencies
+* **airflow dags state**                        
+	* Get the status of a dag run
+* **airflow dags test**                         
+	* Execute one single DagRun
+* **airflow dags trigger**                      
+	* Trigger a DAG run
+* **airflow dags unpause**                      
+	* Resume a paused DAG
+
+***Database operations***
+* **airflow db check**                         
+	* Check if the database can be reached
+* **airflow db check-migrations**               
+	* Check if migration have finished
+* **airflow db clean**                         
+	* Purge old records in metastore tables
+* **airflow db downgrade**                     
+	* Downgrade the schema of the metadata database.
+* **airflow db init**                          
+	* Initialize the metadata database
+* **airflow db reset**                         
+	* Burn down and rebuild the metadata database
+* **airflow db shell**                         
+	* Runs a shell to access the database
+* **airflow db upgrade**                       
+	* Upgrade the metadata database to latest version
+
+***Manage jobs***
+* **airflow jobs check**                       
+	* Checks if job(s) are still alive
+
+***Tools to help run the KubernetesExecutor***
+* **airflow kubernetes cleanup-pods**          
+	* Clean up Kubernetes pods (created by KubernetesExecutor/KubernetesPodOperator) in evicted/failed/succeeded/pending states
+* **airflow kubernetes generate-dag-yaml**     
+	* Generate YAML files for all tasks in DAG. Useful for debugging tasks without launching into a cluster
+
+***Manage pools***
+* **airflow pools delete**                     
+	* Delete pool
+* **airflow pools export**                     
+	* Export all pools
+* **airflow pools get**                        
+	* Get pool size
+* **airflow pools import**                     
+	* Import pools
+* **airflow pools list**                       
+	* List pools
+* **airflow pools set**                        
+	* Configure pool
+
+***Display providers***
+* **airflow providers auth**                    
+	* Get information about API auth backends provided
+* **airflow providers behaviours**              
+	* Get information about registered connection types with custom behaviours
+* **airflow providers get**                     
+	* Get detailed information about a provider
+* **airflow providers hooks**                   
+	* List registered provider hooks
+* **airflow providers links**                   
+	* List extra links registered by the providers
+* **airflow providers list**                    
+	* List installed providers
+* **airflow providers logging**                 
+	* Get information about task logging handlers provided
+* **airflow providers secrets**                 
+	* Get information about secrets backends provided
+* **airflow providers widgets**                 
+	* Get information about registered connection form widgets
+
+***Manage roles***
+* **airflow roles add-perms**                   
+	* Add roles permissions
+* **airflow roles create**                      
+	* Create role
+* **airflow roles del-perms**                   
+	* Delete roles permissions
+* **airflow roles delete**                      
+	* Delete role
+* **airflow roles export**                      
+	* Export roles (without permissions) from db to JSON file
+* **airflow roles import**                      
+	* Import roles (without permissions) from JSON file to db
+* **airflow roles list**                        
+	* List roles
+
+***Manage tasks***
+* **airflow tasks clear**                       
+	* Clear a set of task instance, as if they never ran
+* **airflow tasks failed-deps**                 
+	* Returns the unmet dependencies for a task instance
+* **airflow tasks list**                        
+	* List the tasks within a DAG
+* **airflow tasks render**                      
+	* Render a task instance's template(s)
+* **airflow tasks run**                         
+	* Run a single task instance
+* **airflow tasks state**                       
+	* Get the status of a task instance
+* **airflow tasks states-for-dag-run**          
+	* Get the status of all task instances in a dag run
+* **airflow tasks test**                        
+	* Test a task instance
+
+***Manage users***
+* **airflow users add-role**                    
+	* Add role to a user
+* **airflow users create**                      
+	* Create a user
+* **airflow users delete**                      
+	* Delete a user
+* **airflow users export**                     
+	* Export all users
+* **airflow users import**                      
+	* Import users
+* **airflow users list**                        
+	* List users
+* **airflow users remove-role **                
+	* Remove role from a user
+
+***Manage variables***
+* **airflow variables delete**                   
+	* Delete variable
+* **airflow variables export**                  
+	* Export all variables
+* **airflow variables get**                     
+	* Get variable
+* **airflow variables import**                  
+	* Import variables
+* **airflow variables list**                    
+	* List variables
+* **airflow variables set**                     
+	* Set variable
+
+## Configurações do Airflow
+
+Quando executamos o airflow no container existem 2 arquivos essenciais que existem
+
+	Arquivo airflow.cfg
+	docker-compose.yaml "Sobrescreve" o airflow.cfg
+
+Airflow está dividido em seções de configurações:
+
+	core - configurações mais importantes
+	webserver - interface gráfica
+	scheduler - serviço de agendamento
+
+Usar variável de ambiente:
+* Airflow__
+* Seção__
+* Configuração
+
+Exemplo:
+
+	smtp
+	smtp_host = localhost
+	
+	AIRFLOW__SMTP__SMTP_HOST: 
+
+#### Core
+
+**dags_folder** = /path/to/your/dags/folder
+	- *caminho das suas dags*
+**base_log_folder** = /path/to/your/log/folder 
+	- *caminho dos arquivos de log*
+**executor** = SequentialExecutor
+	- *Executer que está sendo usado*
+**sql_alchemy_conn** = postgresql+psycopg2://user:password@localhost/db_name
+	-  Onde estão os metadados
+**parallelism** =32 - 
+	- máximo de tasks que podem rodar em paralelo em todo o ambiente
+**dag_concurrency** = 16
+	-  número máximo de tarefas que podem ser executadas por dag
+
+#### Webserver
+
+- **web_server_host** = 0.0.0.0 - Endereço padrão
+- **web_server_port** = 8080 - porta padrão
+- **authenticate** = False - Se utiliza autenticação ou não
+
+#### scheduler
+
+- **scheduler_heartbeat_sec** = 5 
+	- verifica se há alguma tarefa para ser executada
+- **job_heartbeat_sec **= 5
+	- frequência em segundos que verifica se o trabalho estã sendo executado corretamente
+- **num_runs** = -1 
+	- número de vezes que o scheduler executa antes de sair
+
+#### Executers
+
+	Alocação de recursos - como e onde executar tarefas
+	Gerencia Paralelismo
+	Gerencia Dependências
+	Tratamento de falhas
+	Monitora - as execuções
+	Loga - registrar as execuções
+
+##### Tipos de Executers
+
+- **CeleryExecutor**==> Execução distribuída em cluster
+- **SequentialExecutor** ==> Permite apenas execução sequencial
+- **LocalExecuter** ==> Permite execução em paralelo, mas somente local
+- **KubernetesExecutor** ==> Executa em ambientes Kubernetes
+
+## Plugins
+
+- Estende a funcionalidade do Airflow
+- Pode encapsular código para reutilização
+- Classe Python
+
+Por padrão ja existe uma pasta para plugins
+
+- Construtor que herda BaseOperator
+- Precisa ter o método Execute 
+
+##### Criando Plugins
+
+O Plugin será para transformar arquivos csv em parquet ou JSON
+
+#### Passo a Passo
+
+Para a criação de um plugin devemos criar um arquivo python dentro da pasta plugins do airflow
+e usar como base a classe BaseOperator do models
+
+
+```python
+from airflow.models import BaseOperator
+
+from airflow.utils.decorators import apply_defaults
+
+import pandas as pd
+
+  
+  
+# Criando classe herdando do BaseOperator
+class BigDataOperator(BaseOperator):
+
+  
+
+    @apply_defaults  # Utilizando o decorator
+    def __init__(self, path_to_csv_file: str, path_to_save_file: str,
+
+                 separator: str = ';', file_type: str = 'parquet', *args,
+
+                 **kwargs) -> None:
+
+        super().__init__(*args, **kwargs)
+
+        self.path_to_csv_file: str = path_to_csv_file  # Caminho do arquivo
+
+        self.path_to_save_file: str = path_to_save_file  # Caminho onde salva o arquivo
+
+        self.separator: str = separator  # Separador do csv
+
+        self.file_type: str = file_type  # Tipo do arquivo ex: csv, json
+
+  
+	# Criando função para executar a conversão do csv
+    def execute(self, context: str) -> None:
+		# lendo o arquivo csv
+        df = pd.read_csv(self.path_to_csv_file, sep=self.separator)
+		# Verificando o tipo do arquivo
+        if self.file_type == 'parquet':
+
+            df.to_parquet(self.path_to_save_file)
+		
+        elif self.file_type == 'json':
+
+            df.to_json(self.path_to_save_file)
+ 
+		# Tratamento de erro
+        else:
+
+            raise ValueError("O Tipo é Inválido!!")
+
+```
+Após a criação do plugin devemos criar uma dag para utilizar o nosso plugin.
+
+```python
+from airflow import DAG
+
+from airflow import Dataset
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import date, datetime
+
+from big_data_operator import BigDataOperator  # Importando o plugin criado
+
+import pandas as pd
+
+  
+
+dag = DAG('customer_csv', description='customer_csv', schedule=[meu_dataset],
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+# Criando uma task com o plugin criado e passando os parâmetros
+customer_task = BigDataOperator(task_id='customer_task', path_to_csv_file='/opt/airflow/data/Churn.csv',
+
+                                path_to_save_file='/opt/airflow/data/Churn.json', separator=';', file_type='json', dag=dag)
+
+  
+  
+
+customer_task
+
+```
