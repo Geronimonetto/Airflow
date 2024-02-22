@@ -445,6 +445,84 @@ branch_task >> par_task
 
 branch_task >> impar_task
 ```
+
+## Pools
+
+
+São usado para gerenciar a concorrência e a alocação de recursos
+
+Exemplo:
+- Varias tarefas que precisam acessar um banco de dados
+- Limites de conexões e recursos
+- Você cria um pool que vai limitar e gerenciar o uso destas conexões
+
+Primeiramente vamos criar uma DAG com 4 tasks paralelas
+- Vamos rodar e ver como são executadas
+
+Vamos criar 1 pool com 1 slot
+- Slot = worker disponível para o recurso - onde as tasks são executadas - 1 Slot executa apenas 1 task por vez, mesmo com a opção de paralelismo.
+- Dessa forma, o pool vai gerenciar o uso do worker
+
+Vamos definir priority_weight para as tasks - maior será a prioridade dela no pool e serão executadas primeiro.
+
+- Após a execução das tasks, elas são executadas ao mesmo momento.
+
+Modificando pools na interface airflow:
+- Passo 1 - Admin >> Pools
+- Passo 2 - Crie um Pool
+- Passo 3 - Nomeie o Pool - Digite o número de slots - Description (optional)
+- Passo 4 - Modifique o código Python adicionando a variavel pool nas tasks
+
+Example:
+
+```python
+from airflow import DAG
+
+from airflow.operators.bash_operator import BashOperator
+
+from datetime import datetime
+
+  
+
+dag = DAG('pool_task', description='task_pool', schedule_interval=None,
+
+          start_date=datetime(2024, 2, 1), catchup=False)
+
+  
+# Por padrão o pool ja vem no BashOperator, então devemos adicionar apenas o nome da pool criada na interface do airflow
+
+task1 = BashOperator(task_id='task_pool1', bash_command='sleep 1', dag=dag, pool = 'my_pool')
+
+task2 = BashOperator(task_id='task_pool2', bash_command='sleep 1', dag=dag, pool = 'my_pool')
+
+task3 = BashOperator(task_id='task_pool3', bash_command='sleep 1', dag=dag, pool = 'my_pool')
+
+task4 = BashOperator(task_id='task_pool4', bash_command='sleep 1', dag=dag, pool = 'my_pool')
+```
+
+Aumentando a prioridade com **priority_weight** - Será executada de acordo com número da prioridade
+
+```python
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime
+
+dag = DAG('pool_task', description='task_pool', schedule_interval=None,
+          start_date=datetime(2024, 2, 1), catchup=False)
+
+task1 = BashOperator(task_id='task_pool1',
+                     bash_command='sleep 1', dag=dag, pool='my_pool')
+task2 = BashOperator(task_id='task_pool2',
+                     bash_command='sleep 1', dag=dag, pool='my_pool',
+                     priority_weight=2)
+task3 = BashOperator(task_id='task_pool3',
+                     bash_command='sleep 1', dag=dag, pool='my_pool')
+task4 = BashOperator(task_id='task_pool4',
+                     bash_command='sleep 1', dag=dag, pool='my_pool',
+                     priority_weight=10)
+
+
+```
 ## Sensors
 
 Os sensores aguardam um evento ou disponibilidade de um serviço, não executa nenhuma ação adicional.
