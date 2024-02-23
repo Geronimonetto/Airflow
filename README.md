@@ -298,6 +298,14 @@ AIRFLOW__SMTP__SMTP_PASSWORD: generated password
 AIRFLOW__SMTP__SMTP_PORT: 587
 AIRFLOW__SMTP__MAIL_FROM: Airflow
 ```
+## Xcom
+
+o Xcom funciona para trocar dados entre tasks
+
+**ti(task instance)** - é o objeto que representa a instância de tarefa sendo executada
+
+**xcom_push()** - é usado para definir o valor
+**xcom_pull()** - é usado para recuperar o valor
 
 ## Airflow Variables
 
