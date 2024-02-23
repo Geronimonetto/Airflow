@@ -446,6 +446,105 @@ branch_task >> par_task
 branch_task >> impar_task
 ```
 
+## Dataset no Airflow
+
+
+Dataset no airflow funciona de forma diferente, podendo ser alterado para execução de uma DAG ou task conforma a alteração de dataset, ou seja ao invés de fazer agendamento por tempo, podemos alterar para ser executado conforma o dataset é alterado.
+
+Os datasets podem ser de diversos tipos, banco de dados, arquivo físico entre outros.
+
+Dag Producer: Atualiza dados
+Dag Consumer: schedule: Dataset - Parâmetro do Dag Consumer.
+
+Exemplo: 
+
+**DAG Producer**
+```python
+
+from airflow import DAG
+
+from airflow import Dataset
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import date,datetime
+
+import pandas as pd
+
+  
+  
+
+dag = DAG('producer', description='producer',
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+
+meu_dataset = Dataset("/opt/airflow/data/Churn_new.csv")
+
+  
+  
+
+def meu_arquivo():
+
+    dataset = pd.read_csv("/opt/airflow/data/Churn.csv", sep=';')
+
+    dataset.to_csv("/opt/airflow/data/Churn_new.csv", sep=';')
+
+  
+  
+
+verify_task = PythonOperator(task_id='verify_task', python_callable=meu_arquivo, dag=dag, outlets=[meu_dataset]) # outlets - informa que irá atualizar o dataset
+
+  
+
+verify_task
+```
+
+**DAG consumer**
+
+```python
+from airflow import DAG
+
+from airflow import Dataset
+
+from airflow.operators.python_operator import PythonOperator
+
+from datetime import date, datetime
+
+import pandas as pd
+
+  
+
+meu_dataset = Dataset("/opt/airflow/data/Churn_new.csv")
+
+  
+  
+
+dag = DAG('consumer', description='consumer', schedule=[meu_dataset],
+
+          start_date=datetime(date.today().year, date.today().month, date.today().day), catchup=False)
+
+  
+  
+
+def meu_arquivo_transform():
+
+    dataset = pd.read_csv("/opt/airflow/data/Churn_new.csv", sep=';')
+
+    dataset.to_csv("/opt/airflow/data/Churn_new_dag.csv", sep=';')
+
+  
+  
+
+verify_task = PythonOperator(task_id='verify_task', python_callable=meu_arquivo_transform,
+
+                             dag=dag, provide_context=True)
+
+  
+
+verify_task
+```
 ## Pools
 
 
