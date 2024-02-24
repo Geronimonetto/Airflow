@@ -264,37 +264,35 @@ task3 >> task4
 task6 >> tsk_group
 ```
 
-## Send Email with Airflow 
+## Enviar Email com o Airflow
+Se ocorrer um erro no DAG, o Airflow envia automaticamente notificações por email.
 
-If an error occurs in the DAG, Airflow automatically sends email notifications.
+Outra maneira é criar uma tarefa para que, no final do pipeline, a tarefa envie o email.
 
-Another way is to create a task so that at the end of the pipeline, the task sends the email.
-
-Automatic, definition in the DAG:
+Automático, definição no DAG:
 
 ```python
-email_on_failure = True  # (Sends email if a failure occurs)
-email_on_retry = False  # (Sends email if the task is retried automatically)
-retries = 1  # Defines the number of times a task will be retried before failing permanently
-retry_delay = timedelta(minutes=5)  # Defines the time interval between retries
-```
-
+email_on_failure = True  # (Envia email se ocorrer um erro)
+email_on_retry = False  # (Envia email se a tarefa for reexecutada automaticamente)
+retries = 1  # Define o número de vezes que uma tarefa será reexecutada antes de falhar permanentemente
+retry_delay = timedelta(minutes=5)  # Define o intervalo de tempo entre as reexecuções
 EmailOperator:
+```
+Envia um email dentro do fluxo de trabalho do Airflow. O que é necessário para o EmailOperator funcionar?
 
-Sends an email within the Airflow workflow. What is needed for EmailOperator to work?
+Servidor SMTP - Serviço de email
+Configurar o Airflow
+Configurando o G-MAIL:
 
-SMTP Server - Email service
-Configure Airflow
-Configuring G-MAIL:
-
-Settings
-Set a password for Airflow
-Add the following lines to your docker-compose.yaml:
+Configurações
+Defina uma senha para o Airflow
+Adicione as seguintes linhas ao seu docker-compose.yaml:
 
 ```yaml
+Copy code
 AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
-AIRFLOW__SMTP__SMTP_USER: your email
-AIRFLOW__SMTP__SMTP_PASSWORD: generated password
+AIRFLOW__SMTP__SMTP_USER: seu email
+AIRFLOW__SMTP__SMTP_PASSWORD: senha gerada
 AIRFLOW__SMTP__SMTP_PORT: 587
 AIRFLOW__SMTP__MAIL_FROM: Airflow
 ```
