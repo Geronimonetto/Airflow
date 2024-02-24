@@ -276,8 +276,10 @@ email_on_failure = True  # (Envia email se ocorrer um erro)
 email_on_retry = False  # (Envia email se a tarefa for reexecutada automaticamente)
 retries = 1  # Define o número de vezes que uma tarefa será reexecutada antes de falhar permanentemente
 retry_delay = timedelta(minutes=5)  # Define o intervalo de tempo entre as reexecuções
-EmailOperator:
+
 ```
+EmailOperator:
+
 Envia um email dentro do fluxo de trabalho do Airflow. O que é necessário para o EmailOperator funcionar?
 
 Servidor SMTP - Serviço de email
@@ -289,13 +291,13 @@ Defina uma senha para o Airflow
 Adicione as seguintes linhas ao seu docker-compose.yaml:
 
 ```yaml
-Copy code
 AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
 AIRFLOW__SMTP__SMTP_USER: seu email
 AIRFLOW__SMTP__SMTP_PASSWORD: senha gerada
 AIRFLOW__SMTP__SMTP_PORT: 587
 AIRFLOW__SMTP__MAIL_FROM: Airflow
 ```
+
 ## Xcom
 
 o Xcom funciona para trocar dados entre tasks
