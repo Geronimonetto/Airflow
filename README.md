@@ -307,59 +307,71 @@ o Xcom funciona para trocar dados entre tasks
 **xcom_push()** - é usado para definir o valor
 **xcom_pull()** - é usado para recuperar o valor
 
-## Airflow Variables
+## Variáveis do Airflow
 
-Functionality for Sharing Information Between DAGs:
+Funcionam para o compartilhamento de informações entre as DAGS
+	- Credenciais de API
+	- URLs
+	- Chaves de autenticação
+	- Endereços de arquivos
+As variáveis podem ser criadas através de Interface gráfica/ CLI / Python
 
-- API Credentials
-- URLs
-- Authentication Keys
-- File Paths
+Diferença entre variáveis e XCom
 
-Variables Creation Methods:
-Variables can be created through the graphical interface, CLI, or Python script.
+Variáveis:
+- São informações estáticas e globais
+- Usadas em todo o pipeline
+XCom
+- Informações dinâmicas
+- Entre as tarefas - Informações trocadas na mesma DAG
 
-Difference between Variables and XCom:
+Variáveis por interface - **Passo1** - Admin >> **Passo 2** - Variables
+Escopo de variáveis
 
-Variables:
+Key: nome_variavel
+Val: informação_aleatoria (exemplo)
+Description: -
 
-- Static and global information
-- Used across the entire pipeline
-XCom:
+Essa variável a partir da criação no Airflow será global podendo ser chamada no python, criamos uma variável chamada minha_var com o valor - ollá
 
-- Dynamic information
-- Exchanged between tasks within the same DAG
-
-*Creating Variables via Interface - Step 1: Admin >> Step 2: Variables*
-
-Scope of Variables:
-
-- Key: variable_name
-- Value: random_information (example)
-- Description: -
-
-Once created in Airflow, this variable becomes global and can be called in Python. For instance, we create a variable named 'my_var' with the value 'hello'.
-
-Example:
+Exemplo:
 
 ```python
 from airflow import DAG
+
 from airflow.operators.python_operator import PythonOperator
+
 from airflow.models import Variable
+
 from datetime import datetime
 
-dag = DAG('variables', description='Global Variables',
-          schedule_interval=None, start_date=datetime(2024, 2, 1), catchup=False)
+  
+
+dag = DAG('variaveis', description='Variaveis globais',
+
+          schedule_interval=None, start_date=datetime(2024, 2, 1), catchup=False)
+
+  
+  
 
 def print_variable(**context):
-    my_var = Variable.get('my_var')
-    print(f'The value of the variable is {my_var}')
+
+    minha_var = Variable.get('minha_var')
+
+    print(f'O Valor da variável é {minha_var}')
+
+  
+  
 
 task1 = PythonOperator(task_id='tsk1', python_callable=print_variable, dag=dag)
 
+  
+
 task1
-#Result: The value of the variable is hello (Displayed in the DAG log)
+
+#Result: O Valor da variável é ollá (Vemos isso no log da DAG)
 ```
+
 
 ## Branchs
 
